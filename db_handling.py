@@ -28,8 +28,8 @@ def add_mensa(name, short_name):
 
     add_entity(mensa)
 
-def add_rating(date, user_id, food_id):
-    rating = FoodRating(date, user_id, food_id)
+def add_rating(chat_id, food_id, rating, date=date.today()):
+    rating = FoodRating(date=date, user_id=chat_id, food_id=food_id, rating=rating)
 
     add_entity(rating)
 
@@ -44,5 +44,17 @@ def get_today_foods():
 
     today_foods = list(sess.query(Food).filter_by(date=today))
     return today_foods
+
+def get_subbed_users():
+    subbed_users = list(sess.query(User).filter(User.subbed_mensas != None))
+
+    return subbed_users
+
+def has_user_voted_today(chat_id):
+    found_rating = sess.query(FoodRating).filter_by(chat_id=chat_id, date=date.today()).first()
+    return found_rating
+
+
+
 
 
