@@ -106,6 +106,9 @@ def has_user_voted_today(chat_id):
     found_rating = sess.query(FoodRating).filter_by(chat_id=chat_id, date=date.today()).first()
     return found_rating
 
+def get_all_mensa_short_names():
+    distinct_short_names = list(sess.query(Mensa.short_name).distinct())
+    return distinct_short_names
 
 if __name__ == "__main__":
     Base.metadata.create_all(db_engine)

@@ -1,11 +1,11 @@
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 
 from .config import TELEGRAM_API_TOKEN
 from .mensa_bot_strings import mensa_bot_strings
 from .db_handling import get_subbed_users, get_today_foods, has_user_voted_today, add_rating, add_feedback, \
-    gen_current_stats, add_stat
+    gen_current_stats, add_stat, add_user, get_all_mensa_short_names, sub_user, unsub_user
 
 
 logging.basicConfig(format="%asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
@@ -17,13 +17,20 @@ Commands
 """
 def start(bot, update):
     update.message.reply_text(mensa_bot_strings["start"])
+    add_user(chat_id=update.message.chat_id, subbed_mensas=None)
 
 
 def help(bot, update):
     update.message.reply_text(mensa_bot_strings["help"])
 
 
-def sub(bot, update):pass
+def sub(bot, update, args, job_queue, chat_data):
+    distinct_mensa_short_names = get_all_mensa_short_names()
+    if any(short_name not in distinct_mensa_short_names for short_name in distinct_mensa_short_names):
+        update.message.reply_text(mensa_bot_strings["invalid_mensa_short_name"] + ", ".join(distinct_mensa_short_names))
+        return
+    subbed_mensas = ",".join(args)
+    sub_user(chat_id=update.message.chat_id, subbed_mensas=subbed_mensas)
 
 
 def unsub(bot, update):pass
@@ -105,16 +112,18 @@ if __name__ == "__main__":
 
     updater.dispatcher.add_handler(CommandHandler("start", start))
     updater.dispatcher.add_handler(CommandHandler("help", help))
-    updater.dispatcher.add_handler(CommandHandler("sub", sub, pass_chat_data=True, pass_job_queue=True))
+    updater.dispatcher.add_handler(CommandHandler("sub", sub, pass_chat_data=True, pass_job_queue=True, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("unsub", unsub, pass_chat_data=True))
-
     updater.dispatcher.add_handler(CommandHandler("feedback", feedback, pass_args=True))
 
+    rating_conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("rate", start_rating)],
+        states={0: [CallbackQueryHandler(handle_food_choice)],
+                1: [CallbackQueryHandler(handle_food_rating)]},
+        fallbacks=[CommandHandler("rate", start_rating)]
+    )
+    updater.dispatcher.add_handler(rating_conv_handler)
 
-    updater.dispatcher.add_handler(CommandHandler("rate", start_rating))
-    updater.dispatcher.add_handler(CallbackQueryHandler())
-
-
-
+    updater.dispatcher.add_error_handler(handle_error)
 
     updater.start_polling()

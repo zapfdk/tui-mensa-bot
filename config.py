@@ -1,6 +1,6 @@
 #Database configuration
-DB_USERNAME = "root"
-DB_PASSWORD = "artist"
+DB_USERNAME = ""
+DB_PASSWORD = ""
 DB_SYSTEM = "mysql+pymysql"
 DB_URL = "localhost"
 DB_DATABASE_NAME = "mensabot"

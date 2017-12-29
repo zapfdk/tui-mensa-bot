@@ -6,4 +6,6 @@ mensa_bot_strings = \
      "thanks_for_feedback": "Danke für dein Feedback!",
      "choose_food": "Wähle das Essen aus, das du heute bewerten willst:",
      "choose_rating": "Wieviele Sterne würdest du deinem Essen geben?",
+     "invalid_mensa_short_name": "Eins deiner eingegeben Mensakürzel war ungültig, bitte wähle eines oder mehrere aus dieser Liste: ",
+
      }
