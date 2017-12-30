@@ -1,6 +1,6 @@
 import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, JobQueue, Job
 
 from .config import TELEGRAM_API_TOKEN
 from .mensa_bot_strings import mensa_bot_strings
@@ -125,5 +125,7 @@ if __name__ == "__main__":
     updater.dispatcher.add_handler(rating_conv_handler)
 
     updater.dispatcher.add_error_handler(handle_error)
+
+
 
     updater.start_polling()
