@@ -4,6 +4,7 @@ This file contains several helper functions for adding and retrieving data to/fr
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
 from config import DB_PASSWORD, DB_SYSTEM, DB_URL, DB_USERNAME, DB_DATABASE_NAME
 from models import User, Food, FoodRating, Mensa, Feedback, Stat, Base
@@ -20,13 +21,12 @@ sess = Session()
 """
 Adding into tables
 """
-def add_user(chat_id, subbed_mensas):
+def add_user(chat_id, subbed_mensas=None):
     user = User(chat_id=chat_id, subbed_mensas=subbed_mensas)
 
     add_entity(user)
 
-def add_food(description, price, date, **mensa_info):
-    mensa_id = sess.query(Mensa).filter_by(**mensa_info).first().id
+def add_food(description, price, date, mensa_id):
     food = Food(description=description, price=price, date=date, mensa_id=mensa_id)
 
     add_entity(food)
@@ -53,10 +53,14 @@ def add_stat():
     add_entity(stat)
 
 def add_entity(entity):
-    assert(isinstance(entity, (User, Food, FoodRating, Mensa)))
+    assert(isinstance(entity, (User, Food, FoodRating, Mensa, Feedback, Stat)))
 
-    sess.add(entity)
-    sess.commit()
+    try:
+        sess.add(entity)
+        sess.commit()
+    except IntegrityError as e:
+        sess.rollback()
+        print(e.args, e.detail)
 
 """
 Selecting from tables
@@ -64,7 +68,7 @@ Selecting from tables
 def get_today_foods():
     today = date.today()
 
-    today_foods = list(sess.query(Food).filter_by(date=today))
+    today_foods = sess.query(Food).filter_by(date=today)
     return today_foods
 
 def get_subbed_users():
@@ -75,13 +79,17 @@ def get_subbed_users():
 """
 Alter data in table
 """
-def sub_user(chat_id, subbed_mensas):
-    user = sess.query(User).filter_by(chat_id=chat_id)
+def sub_user(chat_id, subbed_mensas, subscription_time=time(hour=11)):
+    user = sess.query(User).filter_by(chat_id=chat_id).first()
     if not user:
         add_user(chat_id=chat_id, subbed_mensas=subbed_mensas)
         return
     user.subbed_mensas = subbed_mensas
-    sess.commit()
+    user.subscription_time = subscription_time
+    try:
+        sess.commit()
+    except IntegrityError as e:
+        sess.rollback()
 
 def unsub_user(chat_id):
     user = sess.query(User).filter_by(chat_id=chat_id)
@@ -89,7 +97,10 @@ def unsub_user(chat_id):
         add_user(chat_id=chat_id, subbed_mensas=None)
         return
     user.subbed_mensas = None
-    sess.commit()
+    try:
+        sess.commit()
+    except IntegrityError as e:
+        sess.rollback()
 
 """
 Miscellaneous from database
@@ -103,15 +114,19 @@ def gen_current_stats():
     return stats
 
 def has_user_voted_today(chat_id):
-    found_rating = sess.query(FoodRating).filter_by(chat_id=chat_id, date=date.today()).first()
+    found_rating = sess.query(FoodRating).filter_by(user_id=chat_id, date=date.today()).first()
     return found_rating
 
 def get_all_mensa_short_names():
-    distinct_short_names = list(sess.query(Mensa.short_name).distinct())
+    distinct_short_names = [str(short_name[0]) for short_name in sess.query(Mensa.short_name).distinct()]
     return distinct_short_names
+
+def get_mensa_id_from_name(name):
+    mensa = sess.query(Mensa).filter_by(name=name).first()
+    return mensa.id
 
 if __name__ == "__main__":
     Base.metadata.create_all(db_engine)
-
+    # add_stat()
 
 

@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Date, DateTime, Time, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, DateTime, Time, Boolean, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 
 import datetime as dt
@@ -10,13 +10,16 @@ class User(Base):
     __tablename__ = "user"
 
     id = Column(Integer, primary_key=True)
-    chat_id = Column(Integer, unique=True, nullable=False)
+    chat_id = Column(BigInteger, unique=True, nullable=False)
 
-    subscription_time = Column(Time)
+    subscription_time = Column(Time, default=dt.time(hour=11))
 
     #mensas saved in csv like: "mensa1,mensa2,mensa3"...
     #None if not subscribed
     subbed_mensas = Column(String(128), nullable=True)
+
+    feedbacks = relationship("Feedback", back_populates="user")
+    ratings = relationship("FoodRating", back_populates="user")
 
 
 class Food(Base):
@@ -27,8 +30,10 @@ class Food(Base):
     price = Column(Integer, nullable=False)
     date = Column(Date, nullable=False, default=dt.date.today())
 
-    mensa_id = Column(Integer, ForeignKey("mensa.id"))
+    mensa_id = Column(Integer, ForeignKey("mensa.id"), nullable=False)
     mensa = relationship("Mensa", back_populates="foods")
+
+    ratings = relationship("FoodRating", back_populates="food")
 
 
 class Mensa(Base):
@@ -38,6 +43,8 @@ class Mensa(Base):
     name = Column(String(64), nullable=False)
     short_name = Column(String(8), nullable=False)
 
+    foods = relationship("Food", back_populates="mensa")
+
 
 class FoodRating(Base):
     __tablename__ = "foodrating"
@@ -46,7 +53,7 @@ class FoodRating(Base):
     date = Column(Date, nullable=False, default=dt.date.today())
     rating = Column(Integer, nullable=False)
 
-    user_id = Column(Integer, ForeignKey("user.chat_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("user.chat_id"), nullable=False)
     user = relationship("User", back_populates="ratings")
 
     food_id = Column(Integer, ForeignKey("food.id"), nullable=False)
@@ -59,7 +66,7 @@ class Feedback(Base):
     datetime = Column(DateTime, default=dt.datetime.now(), nullable=False)
     feedback_text = Column(String(1024), nullable=False)
 
-    user_id = Column(Integer, ForeignKey("user.chat_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("user.chat_id"), nullable=False)
     user = relationship("User", back_populates="feedbacks")
 
 class Stat(Base):
