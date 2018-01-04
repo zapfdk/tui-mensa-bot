@@ -65,16 +65,26 @@ def add_entity(entity):
 """
 Selecting from tables
 """
-def get_today_foods():
+def get_today_foods(mensa_list=None):
     today = date.today()
 
     today_foods = sess.query(Food).filter_by(date=today)
+
+    #If mensas were specified filter foods by them
+    if mensa_list:
+        today_foods = today_foods.filter(Food.mensa.short_name.in_(mensa_list))
+
     return today_foods
 
 def get_subbed_users():
     subbed_users = list(sess.query(User).filter(User.subbed_mensas != None))
 
     return subbed_users
+
+def get_user_by_chat_id(chat_id):
+    user = sess.query(User).filter_by(chat_id=chat_id).first()
+
+    return user
 
 """
 Alter data in table
@@ -91,6 +101,8 @@ def sub_user(chat_id, subbed_mensas, subscription_time=time(hour=11)):
     except IntegrityError as e:
         sess.rollback()
 
+    return user
+
 def unsub_user(chat_id):
     user = sess.query(User).filter_by(chat_id=chat_id)
     if not user:
@@ -101,6 +113,8 @@ def unsub_user(chat_id):
         sess.commit()
     except IntegrityError as e:
         sess.rollback()
+
+    return user
 
 """
 Miscellaneous from database

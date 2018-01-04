@@ -5,7 +5,7 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Conversa
 from config import TELEGRAM_API_TOKEN
 from mensa_bot_strings import mensa_bot_strings
 from db_handling import get_subbed_users, get_today_foods, has_user_voted_today, add_rating, add_feedback, \
-    gen_current_stats, add_stat, add_user, get_all_mensa_short_names, sub_user, unsub_user
+    gen_current_stats, add_stat, add_user, get_all_mensa_short_names, sub_user, unsub_user, get_user_by_chat_id
 from parse_menu import get_today_menu
 
 from old.api_token import API_TOKEN
@@ -15,6 +15,8 @@ import datetime as dt
 logging.basicConfig(format="%asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+DAYS = tuple(range(5))
+
 
 """
 Commands
@@ -23,55 +25,51 @@ def start(bot, update):
     update.message.reply_text(mensa_bot_strings["start"])
     add_user(chat_id=update.message.chat_id, subbed_mensas=None)
 
-    keyboard = [[InlineKeyboardButton("Option 1", callback_data='1'),
-                 InlineKeyboardButton("Option 2", callback_data='2')],
-
-                [InlineKeyboardButton("Option 3", callback_data='3')]]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text("asdf", reply_markup=reply_markup)
-
 
 def help(bot, update):
     update.message.reply_text(mensa_bot_strings["help"])
 
 
 def sub(bot, update, args, job_queue, chat_data):
-    distinct_mensa_short_names = get_all_mensa_short_names()
+    subbed_mensas = conv_args_to_mensa_list(update, args)
 
-    if not args:
-        subbed_mensas = ",".join(distinct_mensa_short_names)
-    elif any(arg not in distinct_mensa_short_names for arg in args):
-        update.message.reply_text(mensa_bot_strings["invalid_mensa_short_name"] + ", ".join(distinct_mensa_short_names))
+    if not subbed_mensas:
+        update.message.reply_text(mensa_bot_strings["invalid_mensa_short_name"])
         return
-    else:
-        subbed_mensas = ",".join(args)
 
-    sub_user(chat_id=update.message.chat_id, subbed_mensas=subbed_mensas)
+    user = sub_user(chat_id=update.message.chat_id, subbed_mensas=subbed_mensas)
 
+    #Remove job if available, else ignore
+    try:
+        job = chat_data["daily_job"]
+        job.schedule_removal()
+    except KeyError as e:
+        pass
+
+
+    chat_data["daily_job"] = job_queue.run_daily(daily_menu, time=user.subscription_time, days=DAYS, context=user.chat_id)
     update.message.reply_text("Du hast den Speiseplan für {} abonniert.".format(subbed_mensas))
 
 def unsub(bot, update, chat_data):
-    unsub_user(chat_id=update.message.chat_id)
+    user = unsub_user(chat_id=update.message.chat_id)
+
+    #Remove job if available, else ignore
+    try:
+        job = chat_data["daily_job"]
+        job.schedule_removal()
+    except KeyError as e:
+        pass
+
+    update.message.reply_text("Du hast den Speiseplan deabonniert.")
 
 def menu(bot, update, args):
-    today_foods = get_today_foods()
+    mensa_list = conv_args_to_mensa_list(update, args)
 
-    print(today_foods)
-
-    if not list(today_foods):
-        update.message.reply_text("Heute gibt es leider kein Essen in der Mensa.")
+    if not mensa_list:
+        update.message.reply_text(mensa_bot_strings["invalid_mensa_short_name"])
         return
 
-    menu_txt = "Speiseplan für den {}\n\n".format(today_foods[0].date.strftime("%d.%m.%y"))
-
-    current_mensa = ""
-
-    for food in today_foods:
-        if food.mensa.name != current_mensa:
-            menu_txt += "\n*%s*\n" %food.mensa.name
-            current_mensa = food.mensa.name
-        menu_txt += "- %s (%.2f€)\n" %(food.description, food.price / 100)
+    menu_txt = format_menu(mensa_list)
 
     update.message.reply_text(text=menu_txt, parse_mode=ParseMode.MARKDOWN)
 
@@ -144,7 +142,14 @@ def feedback(bot, update, args):
 Jobs
 """
 def daily_menu(bot, job):
-    pass
+    chat_id = job.context
+
+    user = get_user_by_chat_id(chat_id)
+    mensa_list = user.subbed_mensas.split(",")
+
+    menu_txt = format_menu(mensa_list)
+
+    bot.send_message(text=menu_txt, parse_mode=ParseMode.MARKDOWN)
 
 def get_menu(bot, job):
     get_today_menu()
@@ -156,13 +161,48 @@ def handle_error(bot, update, error):
     logger.warning("Update %s caused error %s" %(update, error))
 
 
-def setup_init_jobs_from_db(job_queue):
+def setup_init_jobs_from_db(updater):
+    job_queue = updater.job_queue
+
     subbed_users = get_subbed_users()
     for subbed_user in subbed_users:
-        #TODO
-        pass
-        pass
+        chat_id = subbed_user.chat_id
+        sub_time = subbed_user.subscription_time
+        updater.dispatcher.chat_data[chat_id] = {}
+        updater.dispatcher.chat_data[chat_id]["daily_job"] = job_queue.run_daily(daily_menu, time=sub_time, context=chat_id, days=DAYS)
 
+
+def format_menu(mensa_list):
+    today_foods = get_today_foods(mensa_list)
+
+    print(today_foods)
+
+    if not list(today_foods):
+        menu_txt = "Heute gibt es leider kein Essen in der Mensa."
+        return menu_txt
+
+    menu_txt = "Speiseplan für den {}\n\n".format(today_foods[0].date.strftime("%d.%m.%y"))
+
+    current_mensa = ""
+
+    for food in today_foods:
+        if food.mensa.name != current_mensa:
+            menu_txt += "\n*%s*\n" %food.mensa.name
+            current_mensa = food.mensa.name
+        menu_txt += "- %s (%.2f€)\n" %(food.description, food.price / 100)
+
+    return menu_txt
+
+def conv_args_to_mensa_list(update, args):
+    distinct_mensa_short_names = get_all_mensa_short_names()
+
+    if not args:
+        subbed_mensas = ",".join(distinct_mensa_short_names)
+    elif any(arg not in distinct_mensa_short_names for arg in args):
+        return 0
+    else:
+        subbed_mensas = ",".join(args)
+    return subbed_mensas
 
 
 if __name__ == "__main__":
@@ -189,6 +229,7 @@ if __name__ == "__main__":
     job_queue = updater.job_queue
     job_queue.run_daily(get_menu, dt.time(hour=1))
     job_queue.run_daily(log_stats, dt.time(hour=1))
+    setup_init_jobs_from_db(updater)
 
 
 
