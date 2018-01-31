@@ -137,6 +137,14 @@ def feedback(bot, update, args):
 
     update.message.reply_text(mensa_bot_strings["thanks_for_feedback"])
 
+def set_time(bot, update, args):
+    try:
+        sub_time = dt.time(args[0], "%H:%M")
+    except ValueError:
+        update.message.reply_text("Gib bitte eine Uhrzeit im Format HH:MM ein.")
+
+    sub_user(update.message.chat_id, subscription_time=sub_time)
+    update.message.reply_text("Du hast deine Uhrzeit auf {0} gestellt.".format(args[0]))
 
 """
 Jobs
@@ -215,7 +223,7 @@ if __name__ == "__main__":
     updater.dispatcher.add_handler(CommandHandler("feedback", feedback, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("menu", menu, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("stats", stats))
-
+    updater.dispatcher.add_handler(CommandHandler("time", set_time))
     rating_conv_handler = ConversationHandler(
         entry_points=[CommandHandler("rate", start_rating)],
         states={0: [CallbackQueryHandler(handle_food_choice, pass_chat_data=True)],

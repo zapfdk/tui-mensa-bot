@@ -1,0 +1,11 @@
+#Available commands that will be fed to the BotFather
+
+start - Starte den Bot
+help - Bekomme Hilfe für die Nutzung des Mensa Bots
+sub - Abonniere den Speiseplan für die angegeben Mensen
+unsub - Deabonniere den Speiseplan
+time - Stelle die Uhrzeit für deinen Speiseplan ein
+menu - Bekomme einmalig den heutigen Speiseplan zugeschickt
+rate - Bewerte dein heutiges Essen
+stats - Erhalte aktuelle Statistiken über den Bot
+feedback - Kontaktiere den Admin für Feedback, Bugs, Infos oder ein paar nette Worte :)

@@ -89,12 +89,14 @@ def get_user_by_chat_id(chat_id):
 """
 Alter data in table
 """
-def sub_user(chat_id, subbed_mensas, subscription_time=time(hour=11)):
+def sub_user(chat_id, subbed_mensas=None, subscription_time=time(hour=11)):
     user = sess.query(User).filter_by(chat_id=chat_id).first()
     if not user:
         add_user(chat_id=chat_id, subbed_mensas=subbed_mensas)
         return
-    user.subbed_mensas = subbed_mensas
+    if subbed_mensas:
+        user.subbed_mensas = subbed_mensas
+
     user.subscription_time = subscription_time
     try:
         sess.commit()
