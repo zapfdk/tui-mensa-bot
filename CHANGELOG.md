@@ -1,8 +1,6 @@
-__author__ = "zapfdk"
+# Changelog
 
-changelog = [
-    {"Datum":"23.01.2018",
-     "Changes:":[
-         ""
-     ]}
-]
+## Latest Changes
+### xx.xx.xxxx
+* This
+* That
