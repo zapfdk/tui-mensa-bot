@@ -9,8 +9,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
-from config import DB_PASSWORD, DB_SYSTEM, DB_URL, DB_USERNAME, DB_DATABASE_NAME
-from models import User, Food, FoodRating, Mensa, Feedback, Stat, Base
+from src.config import DB_PASSWORD, DB_SYSTEM, DB_URL, DB_USERNAME, DB_DATABASE_NAME
+from src.models import User, Food, FoodRating, Mensa, Feedback, Stat, Base
 
 from datetime import date, time
 

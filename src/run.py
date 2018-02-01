@@ -12,10 +12,10 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 
 from res.strings import STRINGS
-from db_handling import get_subbed_users, get_today_foods, add_rating, add_feedback, \
+from src.db_handling import get_subbed_users, get_today_foods, add_rating, add_feedback, \
     gen_current_stats, add_stat, add_user, get_all_mensa_short_names, sub_user, unsub_user, get_user_by_chat_id
-from parse_menu import get_today_menu
-from config import TELEGRAM_API_TOKEN
+from src.parse_menu import get_today_menu
+from src.config import TELEGRAM_API_TOKEN
 
 
 logging.basicConfig(format="%asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
@@ -27,6 +27,8 @@ DAYS = tuple(range(5))
 """
 Commands
 """
+
+
 def start(bot, update):
     """"
     Start mensa bot for this user and add him to user table.
@@ -35,7 +37,7 @@ def start(bot, update):
     add_user(chat_id=update.message.chat_id, subbed_mensas=None)
 
 
-def help(bot, update):
+def get_help(bot, update):
     """
     Send help message to user.
     """
@@ -228,7 +230,8 @@ def setup_init_jobs_from_db(updater):
         chat_id = subbed_user.chat_id
         sub_time = subbed_user.subscription_time
         updater.dispatcher.chat_data[chat_id] = {}
-        updater.dispatcher.chat_data[chat_id]["daily_job"] = job_queue.run_daily(daily_menu, time=sub_time, context=chat_id, days=DAYS)
+        updater.dispatcher.chat_data[chat_id]["daily_job"] = \
+            job_queue.run_daily(daily_menu, time=sub_time, context=chat_id, days=DAYS)
 
 
 def format_menu(mensa_list):
@@ -249,9 +252,9 @@ def format_menu(mensa_list):
 
     for food in today_foods:
         if food.mensa.name != current_mensa:
-            menu_txt += "\n*%s*\n" %food.mensa.name
+            menu_txt += "\n*%s*\n" % food.mensa.name
             current_mensa = food.mensa.name
-        menu_txt += "- %s (%.2f€)\n" %(food.description, food.price / 100)
+        menu_txt += "- %s (%.2f€)\n" % (food.description, food.price / 100)
 
     return menu_txt
 
@@ -272,12 +275,12 @@ def conv_args_to_mensa_list(args):
 
 
 if __name__ == "__main__":
-    #Initialize Bot with API TOKEN
+    # Initialize Bot with API TOKEN
     updater = Updater(TELEGRAM_API_TOKEN)
 
-    #Setup commands
+    # Setup commands
     updater.dispatcher.add_handler(CommandHandler("start", start))
-    updater.dispatcher.add_handler(CommandHandler("help", help))
+    updater.dispatcher.add_handler(CommandHandler("help", get_help))
     updater.dispatcher.add_handler(CommandHandler("sub", sub, pass_chat_data=True, pass_job_queue=True, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("unsub", unsub, pass_chat_data=True))
     updater.dispatcher.add_handler(CommandHandler("feedback", feedback, pass_args=True))
@@ -285,7 +288,7 @@ if __name__ == "__main__":
     updater.dispatcher.add_handler(CommandHandler("stats", stats))
     updater.dispatcher.add_handler(CommandHandler("time", set_time))
 
-    #Setup conversation handler for rating feature
+    # Setup conversation handler for rating feature
     rating_conv_handler = ConversationHandler(
         entry_points=[CommandHandler("rate", start_rating)],
         states={0: [CallbackQueryHandler(handle_food_choice, pass_chat_data=True)],
@@ -294,14 +297,14 @@ if __name__ == "__main__":
     )
     updater.dispatcher.add_handler(rating_conv_handler)
 
-    #Setup error handler which logs errors and warnings
+    # Setup error handler which logs errors and warnings
     updater.dispatcher.add_error_handler(handle_error)
 
-    #Setup jobs
+    # Setup jobs
     job_queue = updater.job_queue
     job_queue.run_daily(get_menu, dt.time(hour=1))
     job_queue.run_daily(log_stats, dt.time(hour=1))
     setup_init_jobs_from_db(updater)
 
-    #Start
+    # Start
     updater.start_polling()

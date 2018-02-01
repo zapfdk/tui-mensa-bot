@@ -1,12 +1,13 @@
 __author__ = "zapfdk"
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Date, DateTime, Time, Boolean, ForeignKey, BigInteger
+from sqlalchemy import Column, Integer, String, Date, DateTime, Time, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 
 import datetime as dt
 
 Base = declarative_base()
+
 
 class User(Base):
     __tablename__ = "user"
@@ -16,8 +17,8 @@ class User(Base):
 
     subscription_time = Column(Time, default=dt.time(hour=11))
 
-    #mensas saved in csv like: "mensa1,mensa2,mensa3"...
-    #None if not subscribed
+    # mensas saved in csv like: "mensa1,mensa2,mensa3"...
+    # None if not subscribed
     subbed_mensas = Column(String(128), nullable=True)
 
     feedbacks = relationship("Feedback", back_populates="user")
@@ -61,6 +62,7 @@ class FoodRating(Base):
     food_id = Column(Integer, ForeignKey("food.id"), nullable=False)
     food = relationship("Food", back_populates="ratings")
 
+
 class Feedback(Base):
     __tablename__ = "feedback"
 
@@ -71,6 +73,7 @@ class Feedback(Base):
     user_id = Column(BigInteger, ForeignKey("user.chat_id"), nullable=False)
     user = relationship("User", back_populates="feedbacks")
 
+
 class Stat(Base):
     __tablename__ = "stat"
 
@@ -79,6 +82,7 @@ class Stat(Base):
     total_users = Column(Integer, nullable=False)
     subbed_users = Column(Integer, nullable=False)
     ratings = Column(Integer, nullable=False)
+
 
 if __name__ == "__main__":
     Base.metadata.create_all()
