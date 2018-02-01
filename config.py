@@ -1,3 +1,5 @@
+__author__ = "zapfdk"
+
 #Database configuration
 DB_USERNAME = ""
 DB_PASSWORD = ""

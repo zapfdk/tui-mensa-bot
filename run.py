@@ -1,16 +1,22 @@
-import logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, JobQueue, Job
+"""
+This script sets up the bot with all the commands and jobs, and runs it.
+"""
 
-from config import TELEGRAM_API_TOKEN
-from mensa_bot_strings import mensa_bot_strings
-from db_handling import get_subbed_users, get_today_foods, has_user_voted_today, add_rating, add_feedback, \
+__author__ = "zapfdk"
+
+
+import logging
+import datetime as dt
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
+
+from res.strings import STRINGS
+from db_handling import get_subbed_users, get_today_foods, add_rating, add_feedback, \
     gen_current_stats, add_stat, add_user, get_all_mensa_short_names, sub_user, unsub_user, get_user_by_chat_id
 from parse_menu import get_today_menu
+from config import TELEGRAM_API_TOKEN
 
-from old.api_token import API_TOKEN
-
-import datetime as dt
 
 logging.basicConfig(format="%asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -22,19 +28,28 @@ DAYS = tuple(range(5))
 Commands
 """
 def start(bot, update):
-    update.message.reply_text(mensa_bot_strings["start"])
+    """"
+    Start mensa bot for this user and add him to user table.
+    """
+    update.message.reply_text(STRINGS["start"])
     add_user(chat_id=update.message.chat_id, subbed_mensas=None)
 
 
 def help(bot, update):
-    update.message.reply_text(mensa_bot_strings["help"])
+    """
+    Send help message to user.
+    """
+    update.message.reply_text(STRINGS["help"])
 
 
 def sub(bot, update, args, job_queue, chat_data):
-    subbed_mensas = conv_args_to_mensa_list(update, args)
+    """
+    Add subscription and job for this user for given mensas in args.
+    """
+    subbed_mensas = conv_args_to_mensa_list(args)
 
     if not subbed_mensas:
-        update.message.reply_text(mensa_bot_strings["invalid_mensa_short_name"])
+        update.message.reply_text(STRINGS["invalid_mensa_short_name"])
         return
 
     user = sub_user(chat_id=update.message.chat_id, subbed_mensas=subbed_mensas)
@@ -43,14 +58,16 @@ def sub(bot, update, args, job_queue, chat_data):
     try:
         job = chat_data["daily_job"]
         job.schedule_removal()
-    except KeyError as e:
+    except KeyError:
         pass
 
-
     chat_data["daily_job"] = job_queue.run_daily(daily_menu, time=user.subscription_time, days=DAYS, context=user.chat_id)
-    update.message.reply_text("Du hast den Speiseplan für {} abonniert.".format(subbed_mensas))
+    update.message.reply_text(STRINGS["sub"]["success"].format(subbed_mensas=subbed_mensas))
 
 def unsub(bot, update, chat_data):
+    """
+    Remove subscription and job for this user.
+    """
     user = unsub_user(chat_id=update.message.chat_id)
 
     #Remove job if available, else ignore
@@ -63,10 +80,13 @@ def unsub(bot, update, chat_data):
     update.message.reply_text("Du hast den Speiseplan deabonniert.")
 
 def menu(bot, update, args):
-    mensa_list = conv_args_to_mensa_list(update, args)
+    """
+    Send today's menu to user.
+    """
+    mensa_list = conv_args_to_mensa_list(args)
 
     if not mensa_list:
-        update.message.reply_text(mensa_bot_strings["invalid_mensa_short_name"])
+        update.message.reply_text(STRINGS["sub"]["invalid_mensa_short_name"])
         return
 
     menu_txt = format_menu(mensa_list)
@@ -78,13 +98,13 @@ def start_rating(bot, update):
     """
     Initiate Rating process and send food options from today.
     """
-    # if has_user_vote/
+    # TODO: check if has_user_vote/
 
     today_foods = get_today_foods()
     food_options = [[InlineKeyboardButton(food.description, callback_data=food.id)] for food in today_foods]
 
     food_list_markup = InlineKeyboardMarkup(food_options)
-    update.message.reply_text(mensa_bot_strings["choose_food"], reply_markup=food_list_markup)
+    update.message.reply_text(STRINGS["rate"]["choose_food"], reply_markup=food_list_markup)
 
     return 0
 
@@ -100,7 +120,7 @@ def handle_food_choice(bot, update, chat_data):
     rating_list_markup = InlineKeyboardMarkup(rating_options)
 
 
-    update.callback_query.edit_message_text(mensa_bot_strings["choose_rating"], reply_markup=rating_list_markup)
+    update.callback_query.edit_message_text(STRINGS["rate"]["choose_rating"], reply_markup=rating_list_markup)
 
     return 1
 
@@ -114,42 +134,58 @@ def handle_food_rating(bot, update, chat_data):
 
     del chat_data["selected_food"]
 
-    update.callback_query.edit_message_text(mensa_bot_strings["choose_rating"], reply_markup="")
-    update.callback_query.answer(mensa_bot_strings["thanks_for_voting"])
+    update.callback_query.edit_message_text(STRINGS["rate"]["choose_rating"], reply_markup="")
+    update.callback_query.answer(STRINGS["rate"]["thanks"])
 
 
 def stats(bot, update):
+    """
+    Send current statistics to user.
+    """
     current_stats = gen_current_stats()
-    stat_msg = "Aktuelle Statistiken:\n" \
-               "{total_users} bisher gesehene Benutzer\n" \
-               "{subbed_users} aktuelle Nutzer\n" \
-               "{ratings} abgegebene Bewertungen\n".format(**current_stats)
+    stat_msg = STRINGS["stats"].format(**current_stats)
     update.message.reply_text(stat_msg)
 
 
 def feedback(bot, update, args):
+    """
+    Save feedback from user to the database.
+    """
     if not args:
-        update.message.reply_text(mensa_bot_strings["no_feedback"])
+        update.message.reply_text(STRINGS["feedback"]["no_feedback"])
         return
 
     feedback_text = " ".join(args)
     add_feedback(chat_id=update.message.chat_id, feedback_text=" ".join(args))
 
-    update.message.reply_text(mensa_bot_strings["thanks_for_feedback"])
+    update.message.reply_text(STRINGS["feedback"]["thanks"])
+
 
 def set_time(bot, update, args):
+    """
+    Set subscription time for this user.
+    """
     try:
-        sub_time = dt.time(args[0], "%H:%M")
+        sub_time = dt.datetime.strptime(args[0], "%H:%M").time()
     except ValueError:
-        update.message.reply_text("Gib bitte eine Uhrzeit im Format HH:MM ein.")
+        update.message.reply_text(STRINGS["time"]["wrong_arg"])
+        return
 
     sub_user(update.message.chat_id, subscription_time=sub_time)
-    update.message.reply_text("Du hast deine Uhrzeit auf {0} gestellt.".format(args[0]))
+    update.message.reply_text(STRINGS["time"]["success"].format(sub_time=args[0]))
+
+    #TODO: change job
+
 
 """
 Jobs
 """
+
+
 def daily_menu(bot, job):
+    """
+    Send menu daily to user at subscription time.
+    """
     chat_id = job.context
 
     user = get_user_by_chat_id(chat_id)
@@ -159,17 +195,32 @@ def daily_menu(bot, job):
 
     bot.send_message(text=menu_txt, parse_mode=ParseMode.MARKDOWN)
 
+
 def get_menu(bot, job):
+    """
+    Download and scrape menu daily and save to database.
+    """
     get_today_menu()
 
+
 def log_stats(bot, job):
+    """
+    Daily job for logging statistics to database.
+    """
     add_stat()
 
+
 def handle_error(bot, update, error):
+    """
+    Simple warning logger.
+    """
     logger.warning("Update %s caused error %s" %(update, error))
 
 
 def setup_init_jobs_from_db(updater):
+    """
+    When script or service is restarted, reinitialize all jobs from database.
+    """
     job_queue = updater.job_queue
 
     subbed_users = get_subbed_users()
@@ -181,6 +232,9 @@ def setup_init_jobs_from_db(updater):
 
 
 def format_menu(mensa_list):
+    """
+    Format menu into a readable form.
+    """
     today_foods = get_today_foods(mensa_list)
 
     print(today_foods)
@@ -201,7 +255,11 @@ def format_menu(mensa_list):
 
     return menu_txt
 
-def conv_args_to_mensa_list(update, args):
+
+def conv_args_to_mensa_list(args):
+    """
+    Convert argument list to csv-format which can be saved to database.
+    """
     distinct_mensa_short_names = get_all_mensa_short_names()
 
     if not args:
@@ -214,8 +272,10 @@ def conv_args_to_mensa_list(update, args):
 
 
 if __name__ == "__main__":
-    updater = Updater(API_TOKEN)
+    #Initialize Bot with API TOKEN
+    updater = Updater(TELEGRAM_API_TOKEN)
 
+    #Setup commands
     updater.dispatcher.add_handler(CommandHandler("start", start))
     updater.dispatcher.add_handler(CommandHandler("help", help))
     updater.dispatcher.add_handler(CommandHandler("sub", sub, pass_chat_data=True, pass_job_queue=True, pass_args=True))
@@ -224,6 +284,8 @@ if __name__ == "__main__":
     updater.dispatcher.add_handler(CommandHandler("menu", menu, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("stats", stats))
     updater.dispatcher.add_handler(CommandHandler("time", set_time))
+
+    #Setup conversation handler for rating feature
     rating_conv_handler = ConversationHandler(
         entry_points=[CommandHandler("rate", start_rating)],
         states={0: [CallbackQueryHandler(handle_food_choice, pass_chat_data=True)],
@@ -232,13 +294,14 @@ if __name__ == "__main__":
     )
     updater.dispatcher.add_handler(rating_conv_handler)
 
+    #Setup error handler which logs errors and warnings
     updater.dispatcher.add_error_handler(handle_error)
 
+    #Setup jobs
     job_queue = updater.job_queue
     job_queue.run_daily(get_menu, dt.time(hour=1))
     job_queue.run_daily(log_stats, dt.time(hour=1))
     setup_init_jobs_from_db(updater)
 
-
-
+    #Start
     updater.start_polling()

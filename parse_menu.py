@@ -1,3 +1,5 @@
+__author__ = "zapfdk"
+
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from datetime import date
