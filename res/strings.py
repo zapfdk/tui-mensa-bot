@@ -32,7 +32,7 @@ STRINGS = {
         Der TUIMensaBot ist ein studentisches Freizeitprojekt und steht weder mit der TU Ilmenau noch dem StW Thüringen in Verbindung.",
 
     "rate": {
-        "alread_rated": "Tut mir leid, aber du kannst nur ein Essen am Tag bewerten.",
+        "already_rated": "Tut mir leid, aber du kannst nur ein Essen am Tag bewerten.",
         "choose_food": "Wähle das Essen aus, das du heute bewerten willst:",
         "choose_rating": "Wieviele Sterne würdest du deinem Essen geben?",
         "thanks": "Danke für's Bewerten!"

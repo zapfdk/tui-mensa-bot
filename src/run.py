@@ -13,7 +13,8 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Conversa
 
 from res.strings import STRINGS
 from src.db_handling import get_subbed_users, get_today_foods, add_rating, add_feedback, \
-    gen_current_stats, add_stat, add_user, get_all_mensa_short_names, sub_user, unsub_user, get_user_by_chat_id
+    gen_current_stats, add_stat, add_user, get_all_mensa_short_names, sub_user, unsub_user, get_user_by_chat_id, \
+    has_user_voted_today
 from src.parse_menu import get_today_menu
 from src.config import TELEGRAM_API_TOKEN
 
@@ -100,7 +101,9 @@ def start_rating(bot, update):
     """
     Initiate Rating process and send food options from today.
     """
-    # TODO: check if has_user_vote/
+    if has_user_voted_today(update.message.chat_id):
+        update.message.reply_text(STRINGS["rate"]["already_rated"])
+        return
 
     today_foods = get_today_foods()
     food_options = [[InlineKeyboardButton(food.description, callback_data=food.id)] for food in today_foods]
@@ -118,9 +121,8 @@ def handle_food_choice(bot, update, chat_data):
     food_choice = update.callback_query
     chat_data["selected_food"] = food_choice.data
 
-    rating_options = [[InlineKeyboardButton("{}".format(a), callback_data=a) for a in range(1,6)]]
+    rating_options = [[InlineKeyboardButton("{}".format(a), callback_data=a) for a in range(1, 6)]]
     rating_list_markup = InlineKeyboardMarkup(rating_options)
-
 
     update.callback_query.edit_message_text(STRINGS["rate"]["choose_rating"], reply_markup=rating_list_markup)
 
@@ -163,7 +165,7 @@ def feedback(bot, update, args):
     update.message.reply_text(STRINGS["feedback"]["thanks"])
 
 
-def set_time(bot, update, args):
+def set_time(bot, update, args, chat_data):
     """
     Set subscription time for this user.
     """
@@ -173,10 +175,19 @@ def set_time(bot, update, args):
         update.message.reply_text(STRINGS["time"]["wrong_arg"])
         return
 
-    sub_user(update.message.chat_id, subscription_time=sub_time)
-    update.message.reply_text(STRINGS["time"]["success"].format(sub_time=args[0]))
+    user = sub_user(update.message.chat_id, subscription_time=sub_time)
 
-    #TODO: change job
+    # Remove job if available, else ignore
+    try:
+        job = chat_data["daily_job"]
+        job.schedule_removal()
+    except KeyError:
+        pass
+
+    chat_data["daily_job"] = job_queue.run_daily(daily_menu, time=user.subscription_time, days=DAYS,
+                                                 context=user.chat_id)
+
+    update.message.reply_text(STRINGS["time"]["success"].format(sub_time=args[0]))
 
 
 """
@@ -234,6 +245,11 @@ def setup_init_jobs_from_db(updater):
             job_queue.run_daily(daily_menu, time=sub_time, context=chat_id, days=DAYS)
 
 
+"""
+MISC
+"""
+
+
 def format_menu(mensa_list):
     """
     Format menu into a readable form.
@@ -286,7 +302,7 @@ if __name__ == "__main__":
     updater.dispatcher.add_handler(CommandHandler("feedback", feedback, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("menu", menu, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("stats", stats))
-    updater.dispatcher.add_handler(CommandHandler("time", set_time))
+    updater.dispatcher.add_handler(CommandHandler("time", set_time, pass_chat_data=True))
 
     # Setup conversation handler for rating feature
     rating_conv_handler = ConversationHandler(
