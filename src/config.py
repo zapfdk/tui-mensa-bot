@@ -10,6 +10,5 @@ DB_DATABASE_NAME = "mensabot"
 # Telegram configuration
 TELEGRAM_API_TOKEN = ""
 ADMIN_MAIL = ""
+ADMIN_ID = 135456030
 
-# .csv file that contains user statistics
-USER_STATISTICS_FILE = "./user_statistics.csv"

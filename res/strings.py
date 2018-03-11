@@ -48,6 +48,10 @@ STRINGS = {
         "invalid_short_name": "Eins deiner eingegebenen Mensakürzel war ungülstig, bitte wähle eines oder mehrere aus dieser Liste: "
     },
 
+    "unsub": {
+        "success": "Du hast den Speiseplan deabonniert."
+    },
+
     "time": {
         "wrong_arg": "Gib bitte eine Uhrzeit im Format HH:MM ein.",
         "success": "Du hast deine Uhrzeit auf {sub_time} gestellt."

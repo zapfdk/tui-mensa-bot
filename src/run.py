@@ -16,7 +16,7 @@ from src.db_handling import get_subbed_users, get_today_foods, add_rating, add_f
     gen_current_stats, add_stat, add_user, get_all_mensa_short_names, sub_user, unsub_user, get_user_by_chat_id, \
     has_user_voted_today
 from src.parse_menu import get_today_menu
-from src.config import TELEGRAM_API_TOKEN
+from src.config import TELEGRAM_API_TOKEN, ADMIN_ID
 
 
 logging.basicConfig(format="%asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
@@ -80,7 +80,7 @@ def unsub(bot, update, chat_data):
     except KeyError as e:
         pass
 
-    update.message.reply_text("Du hast den Speiseplan deabonniert.")
+    update.message.reply_text(STRINGS["unsub"]["success"])
 
 def menu(bot, update, args):
     """
@@ -160,7 +160,8 @@ def feedback(bot, update, args):
         return
 
     feedback_text = " ".join(args)
-    add_feedback(chat_id=update.message.chat_id, feedback_text=" ".join(args))
+    add_feedback(chat_id=update.message.chat_id, feedback_text=feedback_text)
+    bot.send_message(chat_id=ADMIN_ID, text=feedback_text)
 
     update.message.reply_text(STRINGS["feedback"]["thanks"])
 
