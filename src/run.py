@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 This script sets up the bot with all the commands and jobs, and runs it.
 """
