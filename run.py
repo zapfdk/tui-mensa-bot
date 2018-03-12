@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 This script sets up the bot with all the commands and jobs, and runs it.
 """
@@ -12,6 +10,8 @@ import datetime as dt
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
+from telegram.error import (TelegramError, Unauthorized, BadRequest,
+                            TimedOut, ChatMigrated, NetworkError)
 
 from res.strings import STRINGS
 from src.db_handling import get_subbed_users, get_today_foods, add_rating, add_feedback, \
@@ -21,7 +21,7 @@ from src.parse_menu import get_today_menu
 from src.config import TELEGRAM_API_TOKEN, ADMIN_ID
 
 
-logging.basicConfig(format="%asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
+logging.basicConfig(format="%asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 DAYS = tuple(range(5))
@@ -36,7 +36,7 @@ def start(bot, update):
     """"
     Start mensa bot for this user and add him to user table.
     """
-    update.message.reply_text(STRINGS["start"])
+    update.message.reply_text(STRINGS["start"], parse_mode=ParseMode.MARKDOWN)
     add_user(chat_id=update.message.chat_id, subbed_mensas=None)
 
 
@@ -44,7 +44,7 @@ def get_help(bot, update):
     """
     Send help message to user.
     """
-    update.message.reply_text(STRINGS["help"])
+    update.message.reply_text(STRINGS["help"], parse_mode=ParseMode.MARKDOWN)
 
 
 def sub(bot, update, args, job_queue, chat_data):
@@ -67,7 +67,7 @@ def sub(bot, update, args, job_queue, chat_data):
         pass
 
     chat_data["daily_job"] = job_queue.run_daily(daily_menu, time=user.subscription_time, days=DAYS, context=user.chat_id)
-    update.message.reply_text(STRINGS["sub"]["success"].format(subbed_mensas=subbed_mensas))
+    update.message.reply_text(STRINGS["sub"]["success"].format(subbed_mensas=subbed_mensas), parse_mode=ParseMode.MARKDOWN)
 
 def unsub(bot, update, chat_data):
     """
@@ -82,7 +82,7 @@ def unsub(bot, update, chat_data):
     except KeyError as e:
         pass
 
-    update.message.reply_text(STRINGS["unsub"]["success"])
+    update.message.reply_text(STRINGS["unsub"]["success"], parse_mode=ParseMode.MARKDOWN)
 
 def menu(bot, update, args):
     """
@@ -91,7 +91,7 @@ def menu(bot, update, args):
     mensa_list = conv_args_to_mensa_list(args)
 
     if not mensa_list:
-        update.message.reply_text(STRINGS["sub"]["invalid_mensa_short_name"])
+        update.message.reply_text(STRINGS["sub"]["invalid_mensa_short_name"], parse_mode=ParseMode.MARKDOWN)
         return
 
     menu_txt = format_menu(mensa_list)
@@ -106,6 +106,8 @@ def start_rating(bot, update):
     if has_user_voted_today(update.message.chat_id):
         update.message.reply_text(STRINGS["rate"]["already_rated"])
         return
+
+    print(has_user_voted_today(update.message.chat_id))
 
     today_foods = get_today_foods()
     food_options = [[InlineKeyboardButton(food.description, callback_data=food.id)] for food in today_foods]
@@ -150,7 +152,7 @@ def stats(bot, update):
     """
     current_stats = gen_current_stats()
     stat_msg = STRINGS["stats"].format(**current_stats)
-    update.message.reply_text(stat_msg)
+    update.message.reply_text(stat_msg, parse_mode=ParseMode.MARKDOWN)
 
 
 def feedback(bot, update, args):
@@ -163,19 +165,22 @@ def feedback(bot, update, args):
 
     feedback_text = " ".join(args)
     add_feedback(chat_id=update.message.chat_id, feedback_text=feedback_text)
-    bot.send_message(chat_id=ADMIN_ID, text=feedback_text)
+    bot.send_message(chat_id=ADMIN_ID, text="Neues Feedback: "+feedback_text)
 
-    update.message.reply_text(STRINGS["feedback"]["thanks"])
+    update.message.reply_text(STRINGS["feedback"]["thanks"], parse_mode=ParseMode.MARKDOWN)
 
 
 def set_time(bot, update, args, chat_data):
     """
     Set subscription time for this user.
     """
+    if not args:
+        update.message.reply_text(STRINGS["time"]["wrong_arg"], parse_mode=ParseMode.MARKDOWN)
+        return
     try:
         sub_time = dt.datetime.strptime(args[0], "%H:%M").time()
     except ValueError:
-        update.message.reply_text(STRINGS["time"]["wrong_arg"])
+        update.message.reply_text(STRINGS["time"]["wrong_arg"], parse_mode=ParseMode.MARKDOWN)
         return
 
     user = sub_user(update.message.chat_id, subscription_time=sub_time)
@@ -190,7 +195,7 @@ def set_time(bot, update, args, chat_data):
     chat_data["daily_job"] = job_queue.run_daily(daily_menu, time=user.subscription_time, days=DAYS,
                                                  context=user.chat_id)
 
-    update.message.reply_text(STRINGS["time"]["success"].format(sub_time=args[0]))
+    update.message.reply_text(STRINGS["time"]["success"].format(sub_time=args[0]), parse_mode=ParseMode.MARKDOWN)
 
 
 """
@@ -208,8 +213,8 @@ def daily_menu(bot, job):
     mensa_list = user.subbed_mensas.split(",")
 
     menu_txt = format_menu(mensa_list)
-
-    bot.send_message(text=menu_txt, parse_mode=ParseMode.MARKDOWN)
+    
+    bot.send_message(chat_id=chat_id, text=menu_txt, parse_mode=ParseMode.MARKDOWN)
 
 
 def get_menu(bot, job):
@@ -257,9 +262,10 @@ def format_menu(mensa_list):
     """
     Format menu into a readable form.
     """
+    # print(mensa_list)
     today_foods = get_today_foods(mensa_list)
 
-    print(today_foods)
+    # print(today_foods)
 
     if not list(today_foods):
         menu_txt = "Heute gibt es leider kein Essen in der Mensa."
@@ -305,7 +311,7 @@ if __name__ == "__main__":
     updater.dispatcher.add_handler(CommandHandler("feedback", feedback, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("menu", menu, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("stats", stats))
-    updater.dispatcher.add_handler(CommandHandler("time", set_time, pass_chat_data=True))
+    updater.dispatcher.add_handler(CommandHandler("time", set_time, pass_chat_data=True, pass_args=True))
 
     # Setup conversation handler for rating feature
     rating_conv_handler = ConversationHandler(

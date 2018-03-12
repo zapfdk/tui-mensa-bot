@@ -3,33 +3,33 @@ __author__ = "zapfdk"
 STRINGS = {
     "start": "Willkommen beim TU Ilmenau Mensabot",
 
-    "help": "/start Starte den Bot\
-        \
-        /help Bekomme Hilfe für die Nutzung des Mensa Bots\
-        \
-        /sub [mensakürzel] Abonniere den Speiseplan für die angegeben Mensen, z.B. so:\
-        /sub ehren nano\
-        um den Speiseplan für die Mensa Ehrenberg und die Nanoteria zu erhalten.\
-        Mögliche Kürzel: ehren, nano, roentgen\
-        Um den Speiseplan für alle Mensen zu erhalten, könnt ihr die Kürzel einfach weglassen und nur /sub eingeben.\
-        \
-        /unsub Deabonniere den Speiseplan\
-        \
-        /time HH:MM - Stelle die Uhrzeit für deinen Speiseplan ein. Ersetze dafür HH:MM für die Uhrzeit zu der du den Speiseplan bekommen willst\
-        \
-        /menu Bekomme einmalig den Speiseplan zugeschickt. Hier gelten die gleichen Kürzel wie beim /sub Befehl.\
-        \
-        /rate Bewerte dein heutiges Essen auf einer Skala von 1 bis 5\
-        \
-        /stats Erhalte aktuelle Statistiken über den Bot\
-        \
-        /feedback Kontaktiere den Admin für Feedback, Bugs, Infos oder ein paar nette Worte :)\
-        \
-        Disclaimer:\
-        Keine Gewähr auf die Korrektheit des Speiseplans.\
-        Für die Funktionsfähigkeit des Bots wird lediglich deine Chat ID ohne weitere Kontaktangaben gespeichert.\
-        Die durch die Bewertungsfunktion gesammelten Daten werden daher auch nicht personenbezogen sondern nur zur Erhebung von Statistiken verwendet.\
-        Der TUIMensaBot ist ein studentisches Freizeitprojekt und steht weder mit der TU Ilmenau noch dem StW Thüringen in Verbindung.",
+    "help": "/start Starte den Bot\n\
+\n\
+/help Bekomme Hilfe für die Nutzung des Mensa Bots\n\
+\n\
+/sub [mensakürzel] Abonniere den Speiseplan für die angegeben Mensen, z.B. so:\n\
+*/sub ehren nano*\n\
+um den Speiseplan für die Mensa Ehrenberg und die Nanoteria zu erhalten.\n\
+Mögliche Kürzel: ehren, nano, roentgen\n\
+Um den Speiseplan für alle Mensen zu erhalten, könnt ihr die Kürzel einfach weglassen und nur /sub eingeben.\n\
+\n\
+/unsub Deabonniere den Speiseplan\n\
+\n\
+/time HH:MM - Stelle die Uhrzeit für deinen Speiseplan ein. Ersetze dafür HH:MM für die Uhrzeit zu der du den Speiseplan bekommen willst\n\
+\n\
+/menu Bekomme einmalig den Speiseplan zugeschickt. Hier gelten die gleichen Kürzel wie beim /sub Befehl.\n\
+\n\
+/rate Bewerte dein heutiges Essen auf einer Skala von 1 bis 5\n\
+\n\
+/stats Erhalte aktuelle Statistiken über den Bot\n\
+\n\
+/feedback Kontaktiere den Admin für Feedback, Bugs, Infos oder ein paar nette Worte :)\n\
+\n\
+Disclaimer:\n\
+Keine Gewähr auf die Korrektheit des Speiseplans.\n\
+Für die Funktionsfähigkeit des Bots wird lediglich deine Chat ID ohne weitere Kontaktangaben gespeichert.\n\
+Die durch die Bewertungsfunktion gesammelten Daten werden daher auch nicht personenbezogen sondern nur zur Erhebung von Statistiken verwendet.\n\
+Der TUIMensaBot ist ein studentisches Freizeitprojekt und steht weder mit der TU Ilmenau noch dem StW Thüringen in Verbindung.",
 
     "rate": {
         "already_rated": "Tut mir leid, aber du kannst nur ein Essen am Tag bewerten.",

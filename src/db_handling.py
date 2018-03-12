@@ -41,8 +41,8 @@ def add_mensa(name, short_name):
     add_entity(mensa)
 
 
-def add_rating(chat_id, food_id, rating, today=date.today()):
-    rating = FoodRating(date=today, user_id=chat_id, food_id=food_id, rating=rating)
+def add_rating(chat_id, food_id, rating, today):
+    rating = FoodRating(date=date.today(), user_id=chat_id, food_id=food_id, rating=rating)
     add_entity(rating)
 
 
@@ -77,16 +77,21 @@ def get_today_foods(mensa_list=None):
     today = date.today()
 
     today_foods = sess.query(Food).filter_by(date=today)
+    print(today, today_foods)
 
     # If mensas were specified filter foods by them
     if mensa_list:
-        today_foods = today_foods.filter(Food.mensa.short_name.in_(mensa_list))
+        if not type(mensa_list) == list:
+            mensa_list = mensa_list.split(",")
+        today_foods = today_foods.filter(Food.mensa.has(Mensa.short_name.in_(mensa_list)))
 
-    return today_foods
+    print(today_foods.all())
+
+    return today_foods.all()
 
 
 def get_subbed_users():
-    subbed_users = list(sess.query(User).filter(User.subbed_mensas is not None))
+    subbed_users = list(sess.query(User).filter(User.subbed_mensas.isnot(None)))
 
     return subbed_users
 
@@ -140,7 +145,7 @@ Miscellaneous from database
 
 def gen_current_stats():
     nb_total_users = sess.query(User).count()
-    nb_subbed_users = sess.query(User).filter(User.subbed_mensas is not None).count()
+    nb_subbed_users = sess.query(User).filter(User.subbed_mensas.isnot(None)).count()
     nb_ratings = sess.query(FoodRating).count()
 
     stats = {"total_users": nb_total_users, "subbed_users": nb_subbed_users, "ratings": nb_ratings}
@@ -149,6 +154,7 @@ def gen_current_stats():
 
 def has_user_voted_today(chat_id):
     found_rating = sess.query(FoodRating).filter_by(user_id=chat_id, date=date.today()).first()
+    print(found_rating)
     return found_rating
 
 
