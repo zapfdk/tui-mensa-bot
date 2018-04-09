@@ -21,7 +21,7 @@ from src.parse_menu import get_today_menu
 from src.config import TELEGRAM_API_TOKEN, ADMIN_ID
 
 
-logging.basicConfig(format="%asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.ERROR)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 DAYS = tuple(range(5))

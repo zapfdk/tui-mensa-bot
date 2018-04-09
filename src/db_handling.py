@@ -7,7 +7,7 @@ This file contains several helper functions for adding and retrieving data to/fr
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from src.config import DB_PASSWORD, DB_SYSTEM, DB_URL, DB_USERNAME, DB_DATABASE_NAME
 from src.models import User, Food, FoodRating, Mensa, Feedback, Stat, Base
@@ -63,7 +63,7 @@ def add_entity(entity):
     try:
         sess.add(entity)
         sess.commit()
-    except IntegrityError as e:
+    except SQLAlchemyError as e:
         sess.rollback()
         print(e.args, e.detail)
 
@@ -118,7 +118,7 @@ def sub_user(chat_id, subbed_mensas=None, subscription_time=time(hour=11)):
     user.subscription_time = subscription_time
     try:
         sess.commit()
-    except IntegrityError:
+    except SQLAlchemyError:
         sess.rollback()
 
     return user
@@ -132,7 +132,7 @@ def unsub_user(chat_id):
     user.subbed_mensas = None
     try:
         sess.commit()
-    except IntegrityError:
+    except SQLAlchemyError:
         sess.rollback()
 
     return user
