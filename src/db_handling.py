@@ -118,8 +118,9 @@ def sub_user(chat_id, subbed_mensas=None, subscription_time=time(hour=11)):
     user.subscription_time = subscription_time
     try:
         sess.commit()
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         sess.rollback()
+        print(e.args, e.detail)
 
     return user
 
@@ -132,8 +133,9 @@ def unsub_user(chat_id):
     user.subbed_mensas = None
     try:
         sess.commit()
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         sess.rollback()
+        print(e.args, e.detail)
 
     return user
 
