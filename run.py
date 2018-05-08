@@ -213,9 +213,11 @@ def daily_menu(bot, job):
     mensa_list = user.subbed_mensas.split(",")
 
     menu_txt = format_menu(mensa_list)
-    
-    bot.send_message(chat_id=chat_id, text=menu_txt, parse_mode=ParseMode.MARKDOWN)
 
+    try:
+        bot.send_message(chat_id=chat_id, text=menu_txt, parse_mode=ParseMode.MARKDOWN)
+    except Unauthorized:
+        unsub_user(chat_id=chat_id)
 
 def get_menu(bot, job):
     """
