@@ -54,7 +54,7 @@ def sub(bot, update, args, job_queue, chat_data):
     subbed_mensas = conv_args_to_mensa_list(args)
 
     if not subbed_mensas:
-        update.message.reply_text(STRINGS["invalid_mensa_short_name"])
+        update.message.reply_text(STRINGS["sub"]["invalid_short_name"])
         return
 
     user = sub_user(chat_id=update.message.chat_id, subbed_mensas=subbed_mensas)
@@ -107,7 +107,7 @@ def start_rating(bot, update):
         update.message.reply_text(STRINGS["rate"]["already_rated"])
         return
 
-    print(has_user_voted_today(update.message.chat_id))
+    # print(has_user_voted_today(update.message.chat_id))
 
     today_foods = get_today_foods()
     food_options = [[InlineKeyboardButton(food.description, callback_data=food.id)] for food in today_foods]

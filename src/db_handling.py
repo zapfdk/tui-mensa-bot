@@ -15,8 +15,8 @@ from src.models import User, Food, FoodRating, Mensa, Feedback, Stat, Base
 from datetime import date, time
 
 db_config = "{0}://{1}:{2}@{3}/{4}".format(DB_SYSTEM, DB_USERNAME, DB_PASSWORD, DB_URL, DB_DATABASE_NAME)
-print(db_config)
-db_engine = create_engine(db_config)
+# print(db_config)
+db_engine = create_engine(db_config, pool_recycle=1200, pool_pre_ping=True)
 Session = sessionmaker(bind=db_engine)
 
 sess = Session()
@@ -77,7 +77,7 @@ def get_today_foods(mensa_list=None):
     today = date.today()
 
     today_foods = sess.query(Food).filter_by(date=today)
-    print(today, today_foods)
+    # print(today, today_foods)
 
     # If mensas were specified filter foods by them
     if mensa_list:
@@ -85,7 +85,7 @@ def get_today_foods(mensa_list=None):
             mensa_list = mensa_list.split(",")
         today_foods = today_foods.filter(Food.mensa.has(Mensa.short_name.in_(mensa_list)))
 
-    print(today_foods.all())
+    # print(today_foods.all())
 
     return today_foods.all()
 
@@ -156,7 +156,7 @@ def gen_current_stats():
 
 def has_user_voted_today(chat_id):
     found_rating = sess.query(FoodRating).filter_by(user_id=chat_id, date=date.today()).first()
-    print(found_rating)
+    # print(found_rating)
     return found_rating
 
 

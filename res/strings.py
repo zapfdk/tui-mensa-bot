@@ -39,13 +39,14 @@ Der TUIMensaBot ist ein studentisches Freizeitprojekt und steht weder mit der TU
     },
 
     "feedback": {
-        "thanks": "Danke für dein Feedback!",
+        "thanks": "Danke für dein Feedback! \n Den Mensabot gibt es nun auch auf Github! Wenn du einen Bug melden willst, oder Feature Vorschläge hast, kannst du diese "
+                  "gerne unter https://github.com/zapfdk/tui-mensa-bot als Issue erstellen. Auch über Mitarbeit am Projekt freue ich mich immer sehr!",
         "no_feedback": "Du solltest schon etwas dazu schreiben ;)",
     },
 
     "sub": {
         "success": "Du hast den Speiseplan für {subbed_mensas} abonniert.",
-        "invalid_short_name": "Eins deiner eingegebenen Mensakürzel war ungülstig, bitte wähle eines oder mehrere aus dieser Liste: "
+        "invalid_short_name": "Eins deiner eingegebenen Mensakürzel war ungültig."
     },
 
     "unsub": {
