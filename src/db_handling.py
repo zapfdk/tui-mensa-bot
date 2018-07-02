@@ -14,7 +14,10 @@ from src.models import User, Food, FoodRating, Mensa, Feedback, Stat, Base
 
 from datetime import date, time
 
-db_config = "{0}://{1}:{2}@{3}/{4}".format(DB_SYSTEM, DB_USERNAME, DB_PASSWORD, DB_URL, DB_DATABASE_NAME)
+if DB_SYSTEM == "sqlite":
+    db_config = "sqlite:///mensabot.db"
+else:
+    db_config = "{0}://{1}:{2}@{3}/{4}".format(DB_SYSTEM, DB_USERNAME, DB_PASSWORD, DB_URL, DB_DATABASE_NAME)
 # print(db_config)
 db_engine = create_engine(db_config, pool_recycle=1200, pool_pre_ping=True)
 Session = sessionmaker(bind=db_engine)
