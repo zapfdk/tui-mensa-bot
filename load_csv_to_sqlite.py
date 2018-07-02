@@ -19,8 +19,8 @@ con = sqlite3.connect(db_path)
 
 if __name__ == "__main__":    
     for csv_file in csv_files:
-        table_name = os.path.splitext(os.path.basename(csv_path))[0]
-        df = pd.read_csv(csv_path, names=column_names[table_name])
+        table_name = os.path.splitext(os.path.basename(csv_file))[0]
+        df = pd.read_csv(csv_file, names=column_names[table_name])
 
         try:
             df.to_sql(table_name, con, if_exists='append', index=False)

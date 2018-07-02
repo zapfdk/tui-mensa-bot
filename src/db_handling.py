@@ -44,7 +44,7 @@ def add_mensa(name, short_name):
     add_entity(mensa)
 
 
-def add_rating(chat_id, food_id, rating, today):
+def add_rating(chat_id, food_id, rating, today=date.today()):
     rating = FoodRating(date=date.today(), user_id=chat_id, food_id=food_id, rating=rating)
     add_entity(rating)
 
