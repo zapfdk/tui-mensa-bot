@@ -216,7 +216,7 @@ def daily_menu(bot, job):
 
     try:
         bot.send_message(chat_id=chat_id, text=menu_txt, parse_mode=ParseMode.MARKDOWN)
-    except Unauthorized:
+    except (Unauthorized, BadRequest):
         unsub_user(chat_id=chat_id)
 
 def get_menu(bot, job):
