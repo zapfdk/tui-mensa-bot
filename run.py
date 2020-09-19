@@ -25,7 +25,7 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 DAYS = tuple(range(6))
-
+LOCAL_TIMEZONE = dt.datetime.now(dt.timezone(dt.timedelta(0))).astimezone().tzinfo
 
 """
 Commands
@@ -192,7 +192,7 @@ def set_time(bot, update, args, chat_data):
     except KeyError:
         pass
 
-    chat_data["daily_job"] = job_queue.run_daily(daily_menu, time=user.subscription_time, days=DAYS,
+    chat_data["daily_job"] = job_queue.run_daily(daily_menu, time=user.subscription_time.replace(tzinfo=LOCAL_TIMEZONE), days=DAYS,
                                                  context=user.chat_id)
 
     update.message.reply_text(STRINGS["time"]["success"].format(sub_time=args[0]), parse_mode=ParseMode.MARKDOWN)
@@ -252,7 +252,7 @@ def setup_init_jobs_from_db(updater):
         sub_time = subbed_user.subscription_time
         updater.dispatcher.chat_data[chat_id] = {}
         updater.dispatcher.chat_data[chat_id]["daily_job"] = \
-            job_queue.run_daily(daily_menu, time=sub_time, context=chat_id, days=DAYS)
+            job_queue.run_daily(daily_menu, time=sub_time.replace(tzinfo=LOCAL_TIMEZONE), context=chat_id, days=DAYS)
 
 
 """
@@ -329,8 +329,8 @@ if __name__ == "__main__":
 
     # Setup jobs
     job_queue = updater.job_queue
-    job_queue.run_daily(get_menu, dt.time(hour=1))
-    job_queue.run_daily(log_stats, dt.time(hour=1))
+    job_queue.run_daily(get_menu, dt.time(hour=1,tzinfo=LOCAL_TIMEZONE))
+    job_queue.run_daily(log_stats, dt.time(hour=1,tzinfo=LOCAL_TIMEZONE))
     setup_init_jobs_from_db(updater)
 
     # Start
