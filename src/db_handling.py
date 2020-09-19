@@ -150,11 +150,12 @@ Miscellaneous from database
 
 
 def gen_current_stats():
+    nb_current_time = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
     nb_total_users = sess.query(User).count()
     nb_subbed_users = sess.query(User).filter(User.subbed_mensas.isnot(None)).count()
     nb_ratings = sess.query(FoodRating).count()
 
-    stats = {"total_users": nb_total_users, "subbed_users": nb_subbed_users, "ratings": nb_ratings}
+    stats = {"current_time": nb_current_time, "total_users": nb_total_users, "subbed_users": nb_subbed_users, "ratings": nb_ratings}
     return stats
 
 

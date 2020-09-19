@@ -59,6 +59,7 @@ Der TUIMensaBot ist ein studentisches Freizeitprojekt und steht weder mit der TU
     },
 
     "stats": "Aktuelle Statistiken:\n" \
+               "Serverzeit: {current_time}\n" \
                "{total_users} bisher gesehene Benutzer\n" \
                "{subbed_users} aktuelle Nutzer\n" \
                "{ratings} abgegebene Bewertungen\n",
