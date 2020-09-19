@@ -6,5 +6,5 @@ Ein Telegram Bot für eine automatische Zusendung des Speiseplans der Mensen in 
 * Python 3
 * python-telegram-bot
 * sqlalchemy
-* mysql + pymsql
-* beautifulsoup
+* pymysql
+* beautifulsoup4

@@ -6,21 +6,22 @@ This file contains several helper functions for adding and retrieving data to/fr
 
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.pool import QueuePool, SingletonThreadPool, NullPool
 
 from src.config import DB_PASSWORD, DB_SYSTEM, DB_URL, DB_USERNAME, DB_DATABASE_NAME
 from src.models import User, Food, FoodRating, Mensa, Feedback, Stat, Base
 
-from datetime import date, time
+from datetime import date, time, datetime, timezone, timedelta
 
 if DB_SYSTEM == "sqlite":
     db_config = "sqlite:///mensabot.db"
 else:
     db_config = "{0}://{1}:{2}@{3}/{4}".format(DB_SYSTEM, DB_USERNAME, DB_PASSWORD, DB_URL, DB_DATABASE_NAME)
 # print(db_config)
-db_engine = create_engine(db_config, pool_recycle=1200, pool_pre_ping=True)
-Session = sessionmaker(bind=db_engine)
+db_engine = create_engine(db_config, pool_recycle=1200, pool_pre_ping=True, connect_args={'check_same_thread': False})
+Session = scoped_session(sessionmaker(bind=db_engine))
 
 sess = Session()
 
